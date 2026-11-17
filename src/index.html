@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>مدیریت آرشیو PS4 / PS5</title>
+<style>
+:root{--bg:#f6f6f3;--fg:#1c1c1a;--mut:#6a6a64;--card:#fff;--bd:#dcdcd4;--acc:#1f5fbf;--accfg:#fff;--warn:#fff3dc;--ok:#e2f4df;--bad:#fde0e0;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#151514;--fg:#ececE8;--mut:#9a9a92;--card:#201f1e;--bd:#3a3936;--acc:#6aa3f0;--accfg:#10131a;--warn:#3b3020;--ok:#1f3320;--bad:#3d2323;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#151514;--fg:#ececE8;--mut:#9a9a92;--card:#201f1e;--bd:#3a3936;--acc:#6aa3f0;--accfg:#10131a;--warn:#3b3020;--ok:#1f3320;--bad:#3d2323;color-scheme:dark}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.7 system-ui,"Segoe UI",Tahoma,sans-serif}
+main{max-width:1280px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:0 0 4px}
+.sub{color:var(--mut);margin:0 0 14px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px 14px;margin-bottom:12px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button,.btn,select,input{font:inherit;color:inherit}
+button,.btn{background:var(--acc);color:var(--accfg);border:0;border-radius:8px;padding:7px 14px;cursor:pointer;display:inline-block}
+button.alt{background:transparent;color:var(--fg);border:1px solid var(--bd)}
+button:disabled{opacity:.5;cursor:default}
+input[type=text],input[type=search],select{background:var(--card);border:1px solid var(--bd);border-radius:6px;padding:4px 8px}
+progress{width:100%;height:8px}
+.mut{color:var(--mut);font-size:12px}
+.wrap{overflow-x:auto;border:1px solid var(--bd);border-radius:12px;background:var(--card)}
+table{border-collapse:collapse;width:100%;min-width:1050px}
+th,td{padding:6px 8px;border-bottom:1px solid var(--bd);text-align:right;vertical-align:top}
+th{cursor:pointer;white-space:nowrap;background:var(--bg);position:sticky;top:0}
+tr.needs_review{background:var(--warn)}tr.confirmed{background:var(--ok)}tr.newer{background:var(--bad)}
+td input[type=text]{width:100%;min-width:120px}
+td .why{color:var(--mut);font-size:12px}
+a{color:var(--acc)}
+details textarea{width:100%;height:150px;direction:ltr}
+.ltr{direction:ltr;unicode-bidi:embed;display:inline-block}
+.small{font-size:12px}
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+.modal-backdrop.show{display:flex}
+.modal{max-width:680px;width:min(680px,100%);background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:16px 16px 14px;box-shadow:0 18px 80px rgba(0,0,0,.25)}
+.modal h2{margin:0 0 8px;font-size:18px}
+.modal .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.modal .grid .full{grid-column:1/-1}
+.modal label{display:block;font-size:13px;color:var(--mut)}
+.modal input[type=text],.modal select{width:100%;box-sizing:border-box;margin-top:4px}
+.modal .actions{display:flex;gap:8px;justify-content:flex-start;flex-wrap:wrap;margin-top:12px}
+</style>
+</head>
+<body>
+<main>
+<h1>مدیریت آرشیو PS4 / PS5</h1>
+<p class="sub">پوشه آرشیو را انتخاب کنید؛ فایل‌ها آپلود، کپی یا جابه‌جا نمی‌شوند. برنامه فقط اطلاعات فایل‌ها را می‌خواند و برای بازی‌های شناسایی‌شده شورتکات ویندوزی می‌سازد.</p>
+
+<div class="card">
+  <div class="row">
+    <button id="pick">انتخاب پوشه آرشیو…</button>
+    <button class="alt" id="search-settings">تنظیمات جست‌وجو</button>
+    <span class="mut" id="cfgst"></span>
+    <span class="mut" id="st">آماده</span>
+  </div>
+  <progress id="pg" value="0" max="1" hidden></progress>
+</div>
+
+<div class="card row">
+  <label><input type="checkbox" id="mkshortcuts" checked> ساخت خودکار پوشه بازی و شورتکات فایل‌های شناسایی‌شده</label>
+  <button class="alt" id="mkshortcuts-now">ساخت شورتکات برای بازی‌های شناسایی‌شده</button>
+  <button class="alt" id="open-shortcut-dir" disabled>باز کردن پوشه شورتکات‌ها</button>
+  <span class="mut" id="sclst">خروجی داخل پوشه «PS Archive Shortcuts» در آرشیو انتخاب‌شده ساخته می‌شود؛ فایل اصلی کپی یا جابه‌جا نمی‌شود.</span>
+</div>
+
+<div class="card row" id="lk" hidden>
+  <label><input type="checkbox" id="showwin"> نمایش پنجره بررسی (برای تأیید Cloudflare)</label>
+  <label>هم‌زمان: <input type="number" id="conc" value="3" min="1" max="6" style="width:56px"></label>
+  <label><input type="checkbox" id="auto" checked> بررسی آنلاین خودکار بعد از اسکن (ORBISPatches / PROSPEROPatches)</label>
+  <button class="alt" id="lkgo">▶ شروع / ادامه بررسی آنلاین</button>
+  <button class="alt" id="lkstop" disabled>■ توقف</button>
+  <button class="alt" id="clrcache">پاک کردن کش بررسی آنلاین</button>
+  <input type="text" id="testtid" placeholder="CUSA03173" size="11" dir="ltr">
+  <button class="alt" id="testgo">تست یک Title ID</button>
+  <span class="mut" id="lkst"></span>
+</div>
+
+<div class="card row">
+  <label>نمایش: <select id="flt">
+    <option value="all">همه</option><option value="needs_review">نیاز به بررسی</option>
+    <option value="noname">بدون اسم بازی</option><option value="newer">آپدیت جدیدتر موجود است</option><option value="Update">Update</option>
+    <option value="DLC/Add-on">DLC / Add-on</option><option value="Base Game">Base Game</option>
+    <option value="confirmed">تأیید شده</option></select></label>
+  <input id="q" type="search" placeholder="جستجو (Title ID یا اسم)…" size="26">
+  <span class="mut" id="sum"></span>
+  <button class="alt" id="exp" style="margin-inline-start:auto" disabled>⭳ خروجی CSV (Excel)</button>
+</div>
+
+<div class="wrap"><table>
+<thead><tr id="hd"></tr></thead><tbody id="tb"></tbody></table></div>
+<details id="dbg" hidden><summary>گزارش عیب‌یابی بررسی آنلاین (برای ارسال به توسعه‌دهنده)</summary><textarea id="dbgt" readonly></textarea>
+  <button class="alt" id="dbgcopy">کپی گزارش</button></details>
+<p class="mut">اسم بازی را یک بار برای هر Title ID وارد کنید؛ برای همه آیتم‌های همان بازی (Base، Update، DLC) اعمال می‌شود و ذخیره می‌ماند. برای دیدن نسخه‌ها و دانلود آپدیت، روی لینک منبع کلیک کنید.</p>
+</main>
+
+<div id="cfgModal" class="modal-backdrop" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="cfgTitle">
+    <h2 id="cfgTitle">تنظیمات جست‌وجو</h2>
+    <div class="small mut">کلیدها فقط روی همین دستگاه ذخیره می‌شوند. روش پیشنهادی «فقط خود سایت‌ها» است و کلید نمی‌خواهد؛ Serper فقط پشتیبان است. (Google Custom Search برای حساب‌های جدید بسته شده و کنار گذاشته شد.)</div>
+    <div class="grid" style="margin-top:12px">
+      <label class="full">حالت جست‌وجو
+        <select id="cfg-provider">
+          <option value="site">فقط خود سایت‌ها (WebView) — پیشنهادی، بدون کلید</option>
+          <option value="auto">سایت ← Serper (پشتیبان)</option>
+          <option value="serper">فقط Serper</option>
+        </select>
+      </label>
+      <label>Serper API Key
+        <input id="cfg-serper" type="password" placeholder="4c4b...">
+      </label>
+      <label hidden>Google API Key
+        <input id="cfg-google" type="password" placeholder="AIza...">
+      </label>
+      <label class="full" hidden>Google CSE ID (cx)
+        <input id="cfg-cx" type="text" placeholder="5034...">
+      </label>
+      <label class="full" hidden><input id="cfg-autoswitch" type="checkbox" checked> اگر سهمیه Serper تمام شد، خودکار به Google برود</label>
+    </div>
+    <div class="actions">
+      <button id="cfg-save">ذخیره</button>
+      <button class="alt" id="cfg-cancel">بعداً</button>
+    </div>
+  </div>
+</div>
+<script>
+const TID=/(?<![A-Za-z0-9])(CUSA|PPSA)(\d{5})(?!\d)/gi;
+const CID=/([A-Z]{2}\d{4})-((?:CUSA|PPSA)\d{5})_(\d{2})-([A-Z0-9]{16})/i;
+const CIDX=new RegExp('^'+CID.source+'$','i');
+const APPV=/(?<![A-Za-z0-9])A(\d{2})(\d{2})(?!\d)/, VERR=/(?<![A-Za-z0-9])(?:v|ver\.?\s?)(\d{1,2}\.\d{2})(?!\d)/i;
+const REG={UP:'US',EP:'EU',JP:'JP',HP:'Asia',KP:'Korea',IP:'Other',XP:'Other'};
+const PKT={0x1A:'Base Game',0x1B:'DLC/Add-on',0x1C:'DLC/Add-on',0x1D:'Update'};
+const HINTS=[[/(?<![a-z])(update|patch|upd)(?![a-z])/i,'Update'],[/(?<![a-z])(dlc|add-?on|season.?pass|expansion)(?![a-z])/i,'DLC/Add-on'],[/(?<![a-z])(base|game|app)(?![a-z])/i,'Base Game']];
+const SITES={CUSA:['ORBISPatches','https://orbispatches.com/'],PPSA:['PROSPEROPatches','https://prosperopatches.com/']};
+const EXT=/\.(pkg|zip|rar|7z|iso|bin|exfat)$/i;
+const COLS=[['tid','Title ID'],['name','اسم بازی'],['region','ریجن'],['platform','پلتفرم'],['type','نوع'],['ver','نسخه آپدیت'],['upd','وضعیت آپدیت'],['parent','بازی مادر'],['site','منبع'],['status','وضعیت بررسی']];
+const FA={auto_ok:'خودکار',needs_review:'نیاز به بررسی',confirmed:'تأیید شده'};
+const $=id=>document.getElementById(id);
+const CFG_DEFAULT={v:2,provider:'site',autoSwitch:true,serperApiKey:'',googleApiKey:'',googleCx:''};
+let CFG=Object.assign({},CFG_DEFAULT);
+function loadCFG(){try{const s=JSON.parse(localStorage.getItem('psa-search-config')||'{}');const c=Object.assign({},CFG_DEFAULT,s);if((s.v||1)<2){c.provider='site';c.v=2}if(c.provider==='google')c.provider='site';return c}catch(e){return Object.assign({},CFG_DEFAULT)}}
+function saveCFG(){try{localStorage.setItem('psa-search-config',JSON.stringify(CFG))}catch(e){}}
+function cfgSerperOk(){return !!String(CFG.serperApiKey||'').trim()}
+function cfgGoogleOk(){return !!String(CFG.googleApiKey||'').trim() && !!String(CFG.googleCx||'').trim()}
+function cfgReady(){return CFG.provider==='serper' ? cfgSerperOk() : (CFG.provider==='site' ? !!inv : (!!inv || cfgSerperOk()))}
+function updateCfgBadge(){const providerLabel={serper:'Serper',google:'Google',site:'فقط سایت',auto:'خودکار'}[CFG.provider]||'خودکار';const parts=[`حالت: ${providerLabel}`];if(CFG.provider==='serper')parts.push(cfgSerperOk()?'Serper ذخیره شد':'Serper تنظیم نشده');if(CFG.provider==='google')parts.push(cfgGoogleOk()?'Google ذخیره شد':'Google تنظیم نشده');if(CFG.provider==='auto')parts.push(`Serper ${cfgSerperOk()?'✓':'✗'} · Google ${cfgGoogleOk()?'✓':'✗'}`);$('cfgst').textContent=parts.join(' · ')}
+function syncCfgForm(){const modal=$('cfgModal');if(!modal)return;$('cfg-provider').value=CFG.provider;$('cfg-serper').value=CFG.serperApiKey||'';$('cfg-google').value=CFG.googleApiKey||'';$('cfg-cx').value=CFG.googleCx||'';$('cfg-autoswitch').checked=!!CFG.autoSwitch;updateCfgBadge()}
+function readCfgForm(){CFG.provider=$('cfg-provider').value||'auto';CFG.serperApiKey=$('cfg-serper').value.trim();CFG.googleApiKey=$('cfg-google').value.trim();CFG.googleCx=$('cfg-cx').value.trim();CFG.autoSwitch=$('cfg-autoswitch').checked;saveCFG();syncCfgForm()}
+function openCfgModal(){const m=$('cfgModal');if(!m)return;m.classList.add('show');m.setAttribute('aria-hidden','false');syncCfgForm();setTimeout(()=>{$('cfg-provider').focus()},0)}
+function closeCfgModal(){const m=$('cfgModal');if(!m)return;m.classList.remove('show');m.setAttribute('aria-hidden','true')}
+function ensureCfgPrompt(){if(CFG.provider==='serper'&&!cfgReady())openCfgModal()}
+class ApiError extends Error{constructor(msg,status,kind){super(msg);this.status=status||0;this.kind=kind||'error'}}
+function apiSearchQuery(tid){const site=tid.startsWith('CUSA')?'orbispatches.com':'prosperopatches.com';return `${tid} site:${site}`}
+function extractNameFromSearchTitle(title, tid){let s=String(title||'').trim();if(!s)return'';if(tid&&s.toUpperCase().startsWith(tid.toUpperCase()))s=s.slice(tid.length).replace(/^[\s:\-–—|]+/,'');s=s.replace(/\s*[-|]\s*(ORBIS|PROSPERO)Patches.*$/i,'').replace(/\s*\|\s*.*$/,'');return s.trim()}
+function normalizeSearchHit(hit, tid){const title=String(hit&&hit.title||'').trim();const link=String(hit&&hit.link||'').trim();const snippet=String(hit&&hit.snippet||'').trim();return {title,link,snippet,name:extractNameFromSearchTitle(title, tid)}}
+// A search hit is accepted only if it is on the matching tracker site AND mentions this exact Title ID AND yields a name.
+function validHit(h,tid){let host='';try{host=new URL(h.link).hostname.replace(/^www\./,'').toLowerCase()}catch(e){}
+  const want=tid.startsWith('CUSA')?'orbispatches.com':'prosperopatches.com';
+  return host===want&&(h.title+' '+h.link+' '+h.snippet).toUpperCase().includes(tid.toUpperCase())&&!!h.name}
+function pickHit(items,tid,label){for(const x of (Array.isArray(items)?items:[])){if(!x||!x.title||!x.link)continue;const h=normalizeSearchHit(x,tid);if(validHit(h,tid))return {name:h.name,versions:[],src:label,link:h.link}}
+  throw new ApiError(label+': نتیجه معتبر (همان سایت و همان Title ID) پیدا نشد',200,'nohit')}
+function parseSerperResponse(data,tid){return pickHit(data&&data.organic,tid,'serper')}
+function parseGoogleResponse(data,tid){return pickHit(data&&data.items,tid,'google')}
+function classifyApiError(status,data,text){
+  const msg=String((data&&data.error&&data.error.message)||(data&&data.message)||(data&&typeof data.error==='string'?data.error:'')||text||'').slice(0,300);
+  const reasons=((data&&data.error&&data.error.errors)||[]).map(e=>e.reason).join(',');
+  const quota=status===402||status===429||/dailyLimitExceeded|rateLimitExceeded|userRateLimitExceeded|quotaExceeded/i.test(reasons)||/RESOURCE_EXHAUSTED/i.test((data&&data.error&&data.error.status)||'')||/not enough credits|insufficient credits|out of credits|quota exceeded/i.test(msg);
+  const auth=!quota&&(status===401||status===403||/api key not valid|invalid api key|unauthorized/i.test(msg));
+  return new ApiError(msg||('HTTP '+status),status,quota?'quota':(auth?'auth':'error'))}
+async function apiFetch(url,opt){let resp;
+  try{resp=await fetch(url,opt)}catch(e){throw new ApiError('اتصال به API ناموفق بود (شبکه یا CORS): '+(e&&e.message||e),0,'network')}
+  const text=await resp.text();let data={};try{data=text?JSON.parse(text):{}}catch(e){}
+  if(!resp.ok&&/^\s*<(!doctype|html)/i.test(text))throw new ApiError('درخواست قبل از رسیدن به API رد شد (HTTP '+resp.status+'؛ شبکه، منطقه یا فایروال)',resp.status,'blocked');
+  if(!resp.ok)throw classifyApiError(resp.status,data,text);return data}
+async function serperLookup(tid){if(!cfgSerperOk())throw new ApiError('Serper API Key تنظیم نشده',0,'nokey');
+  return parseSerperResponse(await apiFetch('https://google.serper.dev/search',{method:'POST',headers:{'Content-Type':'application/json','X-API-KEY':CFG.serperApiKey},body:JSON.stringify({q:apiSearchQuery(tid),hl:'en',gl:'us'})}),tid)}
+async function googleLookup(tid){if(!cfgGoogleOk())throw new ApiError('Google API Key / cx تنظیم نشده',0,'nokey');
+  return parseGoogleResponse(await apiFetch('https://www.googleapis.com/customsearch/v1?'+new URLSearchParams({key:CFG.googleApiKey,cx:CFG.googleCx,q:apiSearchQuery(tid),num:'5'}).toString()),tid)}
+// Per-run state only: never written back to the saved settings.
+let RUN={serperDown:false,googleDown:false,siteDown:false,siteFails:0,siteFailLimit:3};
+const resetRun=()=>{RUN={serperDown:false,googleDown:false,siteDown:false,siteFails:0,siteFailLimit:3}};
+const siteAvail=()=>!!inv&&(CFG.provider==='auto'||CFG.provider==='site')&&!RUN.siteDown;
+function apiAvail(){return CFG.provider!=='site'&&cfgSerperOk()&&!RUN.serperDown}
+async function lookupViaApis(tid){
+  const mode=CFG.provider,order=['serper'];let last=null;
+  for(const p of order){
+    if((p==='serper'&&(RUN.serperDown||!cfgSerperOk()))||(p==='google'&&(RUN.googleDown||!cfgGoogleOk())))continue;
+    try{return await (p==='serper'?serperLookup(tid):googleLookup(tid))}
+    catch(e){last=e;
+      if(e.kind==='quota'||e.kind==='auth'||e.kind==='blocked'){RUN[p+'Down']=true;$('lkst').textContent='Serper'+(e.kind==='quota'?': سهمیه تمام شد':e.kind==='blocked'?': از شبکه شما مسدود است':': کلید نامعتبر یا بدون دسترسی')}
+      if(!(mode==='auto'&&CFG.autoSwitch))break}}
+  throw last||new ApiError('هیچ سرویس جست‌وجوی API در دسترس نیست',0,'nokey')}
+async function lookupViaSite(tid){const r=await inv('lookup_title',{tid,visible:!!($('showwin')&&$('showwin').checked)});
+  if(r&&r.status==='ok'&&r.name)return {name:r.name,versions:r.versions||[],src:'site',debug:String(r.debug||'').slice(0,600)};
+  const e=new ApiError('سایت: '+((r&&r.status)||'error')+(r&&r.status==='timeout'?' (تأیید Cloudflare انجام نشد؟)':''),0,'site');e.detail=r&&r.debug;throw e}
+async function lookupTitleSmart(tid){let siteErr=null;
+  if(siteAvail()){try{const r=await lookupViaSite(tid);RUN.siteFails=0;return r}catch(e){siteErr=e;if(++RUN.siteFails>=RUN.siteFailLimit)RUN.siteDown=true}}
+  if(CFG.provider==='site')throw siteErr||new ApiError('بررسی از طریق سایت فقط در نسخه دسکتاپ ممکن است',0,'nokey');
+  try{return await lookupViaApis(tid)}catch(e){if(e.kind==='nokey'&&siteErr)throw siteErr;throw e}}
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+let rows=[],sortK='tid',sortD=1,S={names:{},confirmed:{},edits:{}},L={},selectedRoot=null;
+try{L=JSON.parse(localStorage.getItem('psa-l1')||'{}')}catch(e){}
+const saveL=()=>{try{localStorage.setItem('psa-l1',JSON.stringify(L))}catch(e){}};
+const inv=window.__TAURI__&&window.__TAURI__.core?window.__TAURI__.core.invoke:null;
+if(inv)$('lk').hidden=false;
+try{S=Object.assign(S,JSON.parse(localStorage.getItem('psa1')||'{}'))}catch(e){}
+const save=()=>{try{localStorage.setItem('psa1',JSON.stringify(S))}catch(e){}};
+
+async function classify(f){
+  const path=f.relativePath||f.name,parts=path.replace(/\\/g,'/').split('/'),fname=f.name;
+  const h={cid:f.cid||null,type:f.fileType||null},ids=new Set(),nameIds=new Set(),why=[];
+  let cid=null,hint=null,ver=null,hTid=null;
+  if(h.cid&&CIDX.test(h.cid)){cid=h.cid.toUpperCase();hTid=cid.match(CIDX)[2].toUpperCase();ids.add(hTid)}
+  // The native scanner returns paths relative to the selected archive root,
+  // so every component here is a real file/folder name and can be inspected.
+  parts.slice().reverse().forEach(t=>{
+    for(const m of t.matchAll(TID)){const id=(m[1]+m[2]).toUpperCase();nameIds.add(id);ids.add(id)}
+    if(!cid){const m=t.match(CID);if(m)cid=m[0].toUpperCase()}
+    if(!hint)for(const[rx,l]of HINTS){if(l==='Base Game'&&t!==fname)continue;if(rx.test(t)){hint=l;break}}
+    if(!ver){let m=t.match(APPV);if(m)ver=m[1]+'.'+m[2];else if(m=t.match(VERR))ver=m[1]}
+  });
+  const idl=[...ids],tid=idl.length===1?idl[0]:null;
+  if(!idl.length)why.push('Title ID پیدا نشد');
+  else if(idl.length>1)why.push('چند Title ID: '+idl.join(', '));
+  if(hTid&&nameIds.size&&!nameIds.has(hTid))why.push('Title ID هدر PKG با نام فایل فرق دارد');
+  const type=h.type||hint||null;
+  if(h.type&&hint&&h.type!==hint)why.push('تعارض نوع: هدر='+h.type+' / نام='+hint);
+  if(!type)why.push('نوع محتوا نامشخص');
+  if(type==='Update'&&!ver)why.push('نسخه آپدیت نامشخص');
+  const site=tid?SITES[tid.slice(0,4)]:null;
+  return{path,absolutePath:f.path,size:f.size,mtime:new Date(f.mtimeMs||0).toISOString().slice(0,10),
+    tid,tids:idl,cid,region:cid?(REG[cid.slice(0,2)]||''):'',platform:tid?(tid[0]==='C'?'PS4':'PS5'):'',
+    type,ver:type==='Update'?ver:null,site:site?site[0]:'',url:site?site[1]+tid:'',why,why0:why.slice(),status:'auto_ok'};
+}
+
+function post(){
+  const bases=new Set(rows.filter(r=>r.type==='Base Game').map(r=>r.tid)),seen={};
+  for(const r of rows){
+    r.why=r.why0.slice();
+    const e=S.edits[r.path];if(e){if(e.type)r.type=e.type;if('ver' in e)r.ver=e.ver||null}
+    if(r.type==='Update'||r.type==='DLC/Add-on')if(!bases.has(r.tid))r.why.push('بازی اصلی در آرشیو نیست');
+    const l=r.tid&&L[r.tid];
+    if(l&&l.status!=='ok')r.why.push('بررسی آنلاین: '+l.status);
+    if(r.type==='Update'&&r.ver&&l&&l.status==='ok'&&!latest(r))r.why.push(l.src==='site'?'نسخه‌ها از سایت خوانده نشد':'نسخه فقط از خود سایت قابل تشخیص است (اسم از جست‌وجوی API آمده)');
+    const k=[r.tid,r.type,r.ver].join('|');
+    if(r.type){if(seen[k])r.why.push('احتمال تکراری: '+seen[k]);else seen[k]=r.path}
+    r.status=S.confirmed[r.path]?'confirmed':(r.why.length?'needs_review':'auto_ok');
+  }
+}
+
+const nm=r=>(r.tid&&(S.names[r.tid]||(L[r.tid]&&L[r.tid].status==='ok'&&L[r.tid].name)))||'';
+const srcInfo=r=>{if(!r.tid)return'';if(S.names[r.tid])return'اسم: ویرایش دستی';const l=L[r.tid];if(!l||l.status!=='ok')return'';const d=l.at?new Date(l.at).toLocaleString('fa-IR'):'';return'منبع: '+({site:'خود سایت',serper:'Serper',google:'Google'}[l.src]||l.src||'؟')+(d?' · ذخیره‌شده در '+d:'')};
+const vk=v=>String(v||'').split('.').map(Number);
+const cmp=(a,b)=>{const x=vk(a),y=vk(b);for(let i=0;i<Math.max(x.length,y.length);i++){const d=(x[i]||0)-(y[i]||0);if(d)return d}return 0};
+const latest=r=>{const l=r.tid&&L[r.tid];if(!l||l.status!=='ok'||!l.versions||!l.versions.length)return null;return l.versions.reduce((a,b)=>cmp(a,b)>=0?a:b)};
+const updText=r=>{if(r.type!=='Update'||!r.ver)return'';const lt=latest(r);if(!lt)return L[r.tid]?'نامشخص':'';return cmp(r.ver,lt)>=0?'آخرین نسخه':'نسخه جدیدتر: '+lt};
+const isNewer=r=>updText(r).startsWith('نسخه جدیدتر');
+const trusted=r=>!!(r.tid&&(S.names[r.tid]||(L[r.tid]&&L[r.tid].status==='ok'&&L[r.tid].src==='site')||S.confirmed[r.path]));
+const folderName=r=>{const n=nm(r),g=String(r.region||'').trim();return g?`${n} ${g}`:n};
+const parent=r=>(r.type==='Update'||r.type==='DLC/Add-on')&&r.tid?((nm(r)||'؟')+' ['+r.tid+']'):'';
+
+async function syncShortcutsFor(tids=null,force=false){
+  if(!inv||!selectedRoot||(!$('mkshortcuts').checked&&!force))return;
+  const allow=tids?new Set(tids):null;
+  const items=rows.filter(r=>r.tid&&r.absolutePath&&nm(r)&&trusted(r)&&(!allow||allow.has(r.tid)))
+    .map(r=>({sourcePath:r.absolutePath,relativePath:r.path,gameName:folderName(r)}));
+  if(!items.length)return;
+  try{
+    const rep=await inv('create_game_shortcuts',{root:selectedRoot,items});
+    const parts=[];
+    if(rep.created)parts.push(`${rep.created} شورتکات جدید`);
+    if(rep.skipped)parts.push(`${rep.skipped} مورد از قبل موجود`);
+    if(rep.errors&&rep.errors.length)parts.push(`${rep.errors.length} خطا: ${String(rep.errors[0]).slice(0,140)}`);
+    $('sclst').textContent=(parts.join(' · ')||'شورتکات جدیدی لازم نبود')+' — '+rep.outputDir;
+    if(rep.created||rep.skipped||(rep.errors&&rep.errors.length))$('open-shortcut-dir').disabled=false;
+    if(rep.errors&&rep.errors.length){$('dbg').hidden=false;$('dbg').open=true;$('dbgt').value='خطاهای ساخت شورتکات:\n'+rep.errors.join('\n')}
+  }catch(err){$('sclst').textContent='خطا در ساخت شورتکات: '+String(err)}
+}
+
+async function scan(files){
+  const list=[...files].filter(f=>EXT.test(f.name));
+  rows=[];$('pg').hidden=false;$('pg').max=Math.max(list.length,1);
+  for(let i=0;i<list.length;i++){
+    rows.push(await classify(list[i]));
+    if(i%25===0){$('pg').value=i;$('st').textContent=`در حال اسکن… ${i} / ${list.length}`;await new Promise(r=>setTimeout(r))}
+  }
+  $('pg').hidden=true;post();render();
+  $('st').textContent=`اسکن کامل شد: ${rows.length} فایل`;$('exp').disabled=!rows.length;
+  if($('mkshortcuts').checked)await syncShortcutsFor();
+  if(inv&&$('auto').checked&&rows.length)runLookup();
+}
+
+function view(){
+  const f=$('flt').value,q=$('q').value.trim().toLowerCase();
+  let v=rows.filter(r=>{
+    if(f==='needs_review'||f==='confirmed')if(r.status!==f)return false;
+    if(f==='noname'&&(nm(r)||!r.tid))return false;
+    if(f==='newer'&&!isNewer(r))return false;
+    if(['Update','DLC/Add-on','Base Game'].includes(f)&&r.type!==f)return false;
+    return !q||[r.tid,nm(r),r.path].join(' ').toLowerCase().includes(q);
+  });
+  const val=r=>sortK==='name'?nm(r):sortK==='parent'?parent(r):sortK==='upd'?updText(r):(r[sortK]??'');
+  return v.sort((a,b)=>String(val(a)).localeCompare(String(val(b)),undefined,{numeric:true})*sortD);
+}
+
+function render(){
+  $('hd').innerHTML=COLS.map(([k,t])=>`<th data-k="${k}">${t}${sortK===k?(sortD>0?' ▲':' ▼'):''}</th>`).join('');
+  const v=view(),show=v.slice(0,1500);
+  $('tb').innerHTML=show.map(r=>{
+    const i=rows.indexOf(r);
+    const sel=`<select data-f="type" data-i="${i}"><option value="">—</option>${['Base Game','Update','DLC/Add-on'].map(t=>`<option ${r.type===t?'selected':''}>${t}</option>`).join('')}</select>`;
+    return`<tr class="${isNewer(r)?'newer':r.status}" title="${esc(r.path)}&#10;${r.mtime} · ${(r.size/1048576).toFixed(1)} MB">
+<td><span class="ltr">${esc(r.tid||r.tids.join(', '))}</span><div class="why ltr">${esc(r.cid||'')}</div></td>
+<td>${r.tid?`<input type="text" data-f="name" data-i="${i}" title="${esc(srcInfo(r))}" value="${esc(nm(r))}" placeholder="اسم بازی…">`:'—'}</td>
+<td>${esc(r.region)}</td><td>${r.platform}</td><td>${sel}</td>
+<td>${r.type==='Update'?`<input type="text" data-f="ver" data-i="${i}" value="${esc(r.ver||'')}" size="6">`:''}</td>
+<td>${esc(updText(r))}</td>
+<td>${esc(parent(r))}</td>
+<td>${r.url?`<a href="${r.url}" target="_blank" rel="noopener noreferrer">${r.site} ↗</a>`:''}</td>
+<td>${FA[r.status]}<br><button class="alt" data-f="ok" data-i="${i}">${r.status==='confirmed'?'لغو تأیید':'✔ تأیید'}</button>
+<div class="why">${esc(r.why.join('؛ '))}</div><div class="why ltr">${esc(r.path)}</div></td></tr>`}).join('');
+  const c=s=>rows.filter(r=>r.status===s).length;
+  $('sum').textContent=rows.length?`کل: ${rows.length} | نیاز به بررسی: ${c('needs_review')} | آپدیت جدیدتر: ${rows.filter(isNewer).length} | تأیید شده: ${c('confirmed')}${v.length>1500?' | فقط ۱۵۰۰ ردیف اول نمایش داده شد':''}`:'';
+}
+
+async function chooseArchiveFolder(){
+  if(!inv||!window.__TAURI__||!window.__TAURI__.dialog){$('st').textContent='انتخاب پوشه فقط در نسخه دسکتاپ فعال است';return}
+  try{
+    const root=await window.__TAURI__.dialog.open({directory:true,multiple:false,title:'انتخاب پوشه آرشیو PS4 / PS5'});
+    if(!root)return;
+    selectedRoot=root;
+    $('open-shortcut-dir').disabled=true;
+    $('st').textContent='در حال خواندن فهرست فایل‌ها…';
+    const files=await inv('list_archive_files',{root:selectedRoot});
+    await scan(files);
+  }catch(err){$('st').textContent='خطا در خواندن پوشه: '+String(err)}
+}
+$('pick').onclick=chooseArchiveFolder;
+$('flt').onchange=render;$('q').oninput=render;
+$('hd').onclick=e=>{const k=e.target.dataset.k;if(!k)return;sortD=sortK===k?-sortD:1;sortK=k;render()};
+$('tb').onchange=e=>{
+  const t=e.target,r=rows[t.dataset.i],f=t.dataset.f;if(!r||!f)return;
+  if(f==='name'){if(t.value.trim())S.names[r.tid]=t.value.trim();else delete S.names[r.tid];if(r.tid)syncShortcutsFor([r.tid])}
+  else{const ed=S.edits[r.path]=S.edits[r.path]||{};ed[f]=t.value.trim()||null;if(f==='type')r.type=ed.type;if(f==='ver')r.ver=ed.ver}
+  save();render();
+};
+$('tb').onclick=e=>{
+  if(e.target.dataset.f!=='ok')return;
+  const r=rows[e.target.dataset.i];
+  if(S.confirmed[r.path]){delete S.confirmed[r.path];r.status=r.why.length?'needs_review':'auto_ok'}
+  else{S.confirmed[r.path]=1;r.status='confirmed';syncShortcutsFor([r.tid])}
+  save();render();
+};
+$('exp').onclick=async()=>{
+  const H=['title_id','name','region','platform','content_type','update_version','latest_version','update_status','parent_game','source_site','source_url','review_status','review_reasons','content_id','path','mtime'];
+  const q=s=>'"'+String(s??'').replace(/"/g,'""')+'"';
+  const csv='\ufeff'+[H.join(',')].concat(rows.map(r=>[r.tid||r.tids.join(' '),nm(r),r.region,r.platform,r.type,r.ver,latest(r),updText(r),parent(r),r.site,r.url,r.status,r.why.join('; '),r.cid,r.path,r.mtime].map(q).join(','))).join('\r\n');
+  if(inv){try{const p=await inv('save_csv',{filename:'ps_archive_'+Date.now()+'.csv',contents:csv});$('st').textContent='ذخیره شد: '+p}catch(err){$('st').textContent='خطا در ذخیره: '+err}return}
+  const blob=new Blob([csv],{type:'text/csv'});
+  try{
+    const d=window.claude&&claude.use?await claude.use('downloads'):null;
+    if(d){await d.save({filename:'ps_archive.csv',data:blob});return}
+  }catch(err){if(err&&err.code==='declined')return}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ps_archive.csv';a.click();
+};
+
+let running=false,stopReq=false;
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function runLookup(){
+  if(running)return;
+  running=true;stopReq=false;resetRun();$('lkgo').disabled=true;$('lkstop').disabled=false;
+  const retryV=siteAvail(),needV=new Set(rows.filter(r=>r.type==='Update'&&r.ver).map(r=>r.tid));
+  // skip titles that already have a good result; re-check API-only results via the site when an Update row needs versions
+  const tids=[...new Set(rows.map(r=>r.tid).filter(Boolean))].filter(t=>{const l=L[t];return !(l&&l.status==='ok'&&(l.src==='site'||!retryV||!needV.has(t)))});
+  // several hidden lookup windows at once (site mode only); API mode stays sequential
+  const conc=siteAvail()?Math.min(6,Math.max(1,parseInt($('conc').value)||3)):1,failLimit=Math.max(3,conc+1);
+  RUN.siteFailLimit=failLimit;
+  let msg='',fails=0,next=0,done=0,halted=false,timer=null;
+  const flush=()=>{timer=null;saveL();post();render();dbgFill()};
+  const later=()=>{if(!timer)timer=setTimeout(flush,800)};
+  const halt=m=>{if(halted)return false;halted=true;msg=m;return true};
+  async function worker(){
+    while(!halted){
+      if(stopReq){halt('متوقف شد');return}
+      const i=next++;if(i>=tids.length)return;
+      const t=tids[i];$('lkst').textContent=`بررسی ${done+1} / ${tids.length}${conc>1?' (هم‌زمان '+conc+')':''}: ${t}`;
+      let err=null;
+      try{const rep=await lookupTitleSmart(t);L[t]=Object.assign({status:'ok',versions:[]},rep,{at:Date.now()});fails=0}
+      catch(e){err=e;const prev=L[t];
+        if(!(prev&&prev.status==='ok'))L[t]={status:e.kind==='quota'?'quota_exhausted':(e.kind==='nohit'?'ambiguous':'error'),debug:String(e&&(e.detail||e.message)||e),at:Date.now()};
+        fails=(e.kind==='nohit')?0:fails+1}
+      done++;later();
+      if(err&&err.kind==='nokey'){if(halt('هیچ روش جست‌وجویی تنظیم نشده؛ تنظیمات را کامل کنید'))openCfgModal();return}
+      if(err&&!siteAvail()&&!apiAvail()){
+        const keyProblem=cfgSerperOk()&&RUN.serperDown;
+        if(halt(keyProblem?'سهمیه یا کلید Serper مشکل دارد؛ تنظیمات را بررسی کنید':'بررسی از خود سایت چند بار پشت‌سرهم ناموفق بود (مشکل کلید یا سهمیه نیست). «گزارش عیب‌یابی» پایین صفحه را ببینید و برای توسعه‌دهنده بفرستید.')){if(keyProblem)openCfgModal();else showDbg()}
+        return}
+      if(fails>=failLimit){if(halt(fails+' خطای پشت‌سرهم؛ بررسی متوقف شد: '+String(err&&err.message||err).slice(0,120)))showDbg();return}
+      await sleep(siteAvail()?600:250);
+    }
+  }
+  await Promise.all(Array.from({length:conc},worker));
+  if(timer)clearTimeout(timer);flush();
+  running=false;$('lkgo').disabled=false;$('lkstop').disabled=true;
+  if($('mkshortcuts').checked)await syncShortcutsFor();
+  $('lkst').textContent=msg||'بررسی آنلاین کامل شد';
+}
+function dbgFill(){
+  const all=Object.entries(L).filter(([k,v])=>v.debug).sort((x,y)=>(y[1].at||0)-(x[1].at||0));
+  const bad=all.filter(([k,v])=>v.status!=='ok').slice(0,3),good=all.filter(([k,v])=>v.status==='ok').slice(0,1);
+  const list=bad.concat(good).map(([k,v])=>({tid:k,status:v.status,debug:v.debug}));
+  $('dbg').hidden=!list.length;$('dbgt').value=JSON.stringify(list,null,1);
+}
+function showDbg(){dbgFill();if(!$('dbg').hidden){$('dbg').open=true;try{$('dbg').scrollIntoView()}catch(e){}}}
+$('testgo').onclick=async()=>{
+  const t=($('testtid').value||'').trim().toUpperCase();
+  if(!/^(CUSA|PPSA)\d{5}$/.test(t)){$('lkst').textContent='Title ID معتبر وارد کنید (مثل CUSA03173)';return}
+  $('lkst').textContent='در حال تست '+t+' … (پنجره سایت باز می‌شود)';
+  let r;try{r=await inv('lookup_title',{tid:t,visible:true})}catch(e){r={status:'error',debug:String(e)}}
+  $('dbg').hidden=false;$('dbg').open=true;$('dbgt').value=JSON.stringify(Object.assign({tid:t},r),null,1);
+  $('lkst').textContent='نتیجه تست: '+r.status+(r.name?' — '+r.name:'');
+};
+$('dbgcopy').onclick=()=>{$('dbgt').select();try{document.execCommand('copy');$('lkst').textContent='گزارش کپی شد'}catch(e){}};
+$('clrcache').onclick=()=>{L={};saveL();post();render();dbgFill();$('lkst').textContent='کش پاک شد؛ دفعه بعد همه Title IDها دوباره از سایت بررسی می‌شوند (اسم‌های دستی و تأییدها حفظ شدند)'};
+$('lkgo').onclick=runLookup;$('lkstop').onclick=()=>{stopReq=true};
+$('mkshortcuts-now').onclick=()=>syncShortcutsFor(null,true);
+$('mkshortcuts').onchange=()=>{if($('mkshortcuts').checked)syncShortcutsFor()};
+$('open-shortcut-dir').onclick=()=>{if(inv&&selectedRoot)inv('open_shortcuts_folder',{root:selectedRoot}).catch(err=>$('sclst').textContent='خطا در باز کردن پوشه: '+String(err))};
+$('search-settings').onclick=openCfgModal;
+$('cfg-save').onclick=()=>{readCfgForm();closeCfgModal();$('st').textContent='تنظیمات ذخیره شد'};
+$('cfg-cancel').onclick=()=>closeCfgModal();
+$('cfgModal').addEventListener('click',e=>{if(e.target.id==='cfgModal')closeCfgModal()});
+['cfg-provider','cfg-serper','cfg-google','cfg-cx','cfg-autoswitch'].forEach(id=>{$(id).addEventListener('input',()=>{readCfgForm();updateCfgBadge()})});
+document.addEventListener('click',e=>{
+  const a=e.target.closest&&e.target.closest('a[target=_blank]');
+  if(a&&inv){e.preventDefault();inv('open_url',{url:a.href}).catch(()=>{})}
+});
+CFG=loadCFG();syncCfgForm();ensureCfgPrompt();render();dbgFill();
+</script>
+</body>
+</html>
